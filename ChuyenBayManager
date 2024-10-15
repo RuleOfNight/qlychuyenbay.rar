@@ -1,0 +1,312 @@
+package service;
+
+import entity.ChuyenBay;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.util.function.BiPredicate;
+
+public class ChuyenBayManager {
+    private List<ChuyenBay> cblist = new ArrayList<>();
+    private final String FILE_PATH = "chuyenbay.txt";
+    private Scanner sc = new Scanner(System.in);
+
+    public ChuyenBayManager() {
+        docChuyenBayFromFile();
+    }
+
+    public void addChuyenBay() {
+        Scanner scanner = new Scanner(System.in);
+
+        String maChuyenBay;
+        do {
+            System.out.print("Nhập mã chuyến bay: ");
+            maChuyenBay = scanner.nextLine();
+        } while (maChuyenBay.trim().isEmpty());
+
+        int soGhe;
+        do {
+            System.out.print("Nhập số ghế: ");
+            while (!scanner.hasNextInt()) {
+                System.out.print("Vui lòng nhập một số hợp lệ cho số ghế: ");
+                scanner.next();
+            }
+            soGhe = scanner.nextInt();
+            scanner.nextLine();
+        } while (soGhe <= 0);
+
+        String ngayBay;
+        do {
+            System.out.print("Nhập ngày bay (yyyy-mm-dd): ");
+            ngayBay = scanner.nextLine();
+        } while (!ngayBay.matches("\\d{4}-\\d{2}-\\d{2}"));
+
+        String gioBay;
+        do {
+            System.out.print("Nhập giờ bay (hh:mm): ");
+            gioBay = scanner.nextLine();
+        } while (!gioBay.matches("\\d{2}:\\d{2}"));
+
+        String tgBay;
+        do {
+            System.out.print("Nhập thời gian bay: ");
+            tgBay = scanner.nextLine();
+        } while (tgBay.trim().isEmpty());
+
+        String diemDen;
+        do {
+            System.out.print("Nhập điểm đến: ");
+            diemDen = scanner.nextLine();
+        } while (diemDen.trim().isEmpty());
+
+        String hang;
+        do {
+            System.out.print("Nhập hãng máy bay: ");
+            hang = scanner.nextLine();
+        } while (hang.trim().isEmpty());
+
+        // Nhập mã phi công
+        String[] maPhiCongs = new String[2];
+        for (int i = 0; i < 2; i++) {
+            do {
+                System.out.print("Nhập mã phi công " + (i + 1) + ": ");
+                maPhiCongs[i] = scanner.nextLine();
+            } while (maPhiCongs[i].trim().isEmpty());
+        }
+
+        // Nhập mã tiếp viên
+        int soLuongTiepVien;
+        do {
+            System.out.print("Nhập số lượng tiếp viên: ");
+            while (!scanner.hasNextInt()) {
+                System.out.print("Vui lòng nhập một số hợp lệ cho số lượng tiếp viên: ");
+                scanner.next();
+            }
+            soLuongTiepVien = scanner.nextInt();
+            scanner.nextLine();
+        } while (soLuongTiepVien <= 0);
+
+        String[] maTiepViens = new String[soLuongTiepVien];
+        for (int i = 0; i < soLuongTiepVien; i++) {
+            do {
+                System.out.print("Nhập mã tiếp viên " + (i + 1) + ": ");
+                maTiepViens[i] = scanner.nextLine();
+            } while (maTiepViens[i].trim().isEmpty());
+        }
+
+
+        ChuyenBay cb = new ChuyenBay(maChuyenBay, soGhe, ngayBay, gioBay, tgBay, diemDen, hang, maPhiCongs, maTiepViens);
+        cblist.add(cb);
+        System.out.println("Chuyến bay đã được thêm thành công.");
+    }
+
+
+
+    private String timKiemTenNhanVien(String maNhanVien, String filePath) {
+        return timKiemTrongFile(filePath, maNhanVien);
+    }
+
+    private String timKiemTrongFile(String filePath, String maNhanVien) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length >= 2 && parts[0].equals(maNhanVien)) {
+                    return parts[1];
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public void removeChuyenBay() {
+        System.out.print("Nhập mã chuyến bay cần xóa: ");
+        String maChuyenBay = sc.nextLine();
+
+        List<ChuyenBay> updatedList = new ArrayList<>();
+        boolean found = false;
+
+        for (ChuyenBay cb : cblist) {
+            if (!cb.getMaChuyenBay().equals(maChuyenBay)) {
+                updatedList.add(cb);
+            } else {
+                found = true;
+            }
+        }
+
+        if (found) {
+            cblist = updatedList;
+            writeChuyenBayToFile();
+            System.out.println("Đã xóa chuyến bay có mã: " + maChuyenBay);
+        } else {
+            System.out.println("Không tìm thấy chuyến bay với mã: " + maChuyenBay);
+        }
+    }
+
+    public void editChuyenBay() {
+        System.out.print("Nhập mã chuyến bay cần chỉnh sửa: ");
+        String maChuyenBay = sc.nextLine();
+
+        boolean found = false;
+        for (ChuyenBay cb : cblist) {
+            if (cb.getMaChuyenBay().equals(maChuyenBay)) {
+                found = true;
+
+                System.out.println("Để trống nếu không muốn thay đổi");
+
+                System.out.print("Nhập mã chuyến bay mới: ");
+                String maChuyenBayMoi = sc.nextLine();
+                if (!maChuyenBayMoi.isEmpty()) {
+                    cb.setMaChuyenBay(maChuyenBayMoi);
+                }
+
+                System.out.print("Nhập ngày bay mới: ");
+                String ngayBayMoi = sc.nextLine();
+                if (!ngayBayMoi.isEmpty()) {
+                    cb.setNgayBay(ngayBayMoi);
+                }
+
+                System.out.println("Nhập giờ bay mới: ");
+                String gioBayMoi = sc.nextLine();
+                if (!gioBayMoi.isEmpty()) {
+                    cb.setGioBay(gioBayMoi);
+                }
+
+                System.out.println("Nhập thời gian bay mới: ");
+                String tgBayMoi = sc.nextLine();
+                if (!tgBayMoi.isEmpty()) {
+                    cb.setTgBay(tgBayMoi);
+                }
+
+                System.out.print("Nhập điểm đến mới: ");
+                String diemDenMoi = sc.nextLine();
+                if (!diemDenMoi.isEmpty()) {
+                    cb.setDiemDen(diemDenMoi);
+                }
+
+                System.out.print("Nhập số ghế mới: ");
+                String soGheMoi = sc.nextLine();
+                if (!soGheMoi.isEmpty()) {
+                    cb.setSoGhe(Integer.parseInt(soGheMoi));
+                }
+
+                System.out.print("Nhập tên hãng máy bay mới: ");
+                String hangMoi = sc.nextLine();
+                if (!hangMoi.isEmpty()) {
+                    cb.setHang(hangMoi);
+                }
+
+                System.out.println("Chỉnh sửa chuyến bay thành công.");
+                writeChuyenBayToFile();
+                break;
+            }
+        }
+
+        if (!found) {
+            System.out.println("Không tìm thấy chuyến bay với mã này.");
+        }
+    }
+
+    public void hienThi() {
+        if (cblist.isEmpty()) {
+            System.out.println("Danh sách chuyến bay trống.");
+        } else {
+            for (ChuyenBay cb : cblist) {
+                cb.hienThi();
+            }
+        }
+    }
+
+    public void locChuyenBayTheoTieuChi() {
+        System.out.println("1. Lọc chuyến bay theo điểm đến");
+        System.out.println("2. Lọc chuyến bay theo hãng bay");
+        System.out.print("Chọn loại lọc: ");
+        int loaiLoc = sc.nextInt();
+        sc.nextLine();
+
+        if (loaiLoc == 1) {
+            System.out.print("Nhập điểm đến để lọc: ");
+            String diemDen = sc.nextLine();
+            locChuyenBay(diemDen, (cb, tieuChi) -> cb.getDiemDen().equalsIgnoreCase(tieuChi));
+        } else if (loaiLoc == 2) {
+            System.out.print("Nhập hãng bay để lọc: ");
+            String hangBay = sc.nextLine();
+            locChuyenBay(hangBay, (cb, tieuChi) -> cb.getHang().equalsIgnoreCase(tieuChi));
+        } else {
+            System.out.println("Lựa chọn không hợp lệ.");
+        }
+    }
+
+    public void locChuyenBay(String tieuChi, BiPredicate<ChuyenBay, String> predicate) {
+        boolean found = false;
+        for (ChuyenBay cb : cblist) {
+            if (predicate.test(cb, tieuChi)) {
+                System.out.println(cb);
+                found = true;
+            }
+        }
+        if (!found) {
+            System.out.println("Không tìm thấy chuyến bay phù hợp với tiêu chí.");
+        }
+    }
+
+    private void writeChuyenBayToFile() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_PATH))) {
+            for (ChuyenBay cb : cblist) {
+                writer.write(cb.toString());
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void docChuyenBayFromFile() {
+        try (BufferedReader br = new BufferedReader(new FileReader(FILE_PATH))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(",");
+
+
+                if (parts.length >= 8) {
+                    String maChuyenBay = parts[0];
+                    int soGhe = Integer.parseInt(parts[1].split("=")[1].trim()); // Lấy giá trị sau "="
+                    String ngayBay = parts[2];
+                    String gioBay = parts[3];
+                    String tgBay = parts[4];
+                    String diemDen = parts[5];
+                    String hang = parts[6];
+
+
+                    String[] maPhiCongs = {parts[7], parts[8]};
+
+
+                    String[] maTiepViens = new String[parts.length - 9];
+                    for (int i = 9; i < parts.length; i++) {
+                        maTiepViens[i - 9] = parts[i];
+                    }
+
+                    ChuyenBay cb = new ChuyenBay(maChuyenBay, soGhe, ngayBay, gioBay, tgBay, diemDen, hang, maPhiCongs, maTiepViens);
+                    cblist.add(cb);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (NumberFormatException e) {
+            System.out.println("Có lỗi khi đọc dữ liệu: " + e.getMessage());
+        }
+    }
+
+
+
+    public void hienThiChuyenBay() {
+        for (ChuyenBay cb : cblist) {
+            cb.hienThi();
+            System.out.println();
+        }
+    }
+}
+
